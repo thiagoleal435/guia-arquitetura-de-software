@@ -33,7 +33,6 @@ keywords: ["pipe and filter", "pipes and filters", "estilo arquitetural", "pipel
 
 ## Definição e contexto
 
-<!-- TODO: Membro 2 (Emerson Silva) — escrever esta seção -->
 
 O estilo Pipe and Filter é composto por quatro elementos fundamentais que,
 juntos, definem tanto a topologia quanto o comportamento do sistema
@@ -243,7 +242,6 @@ flowchart LR
 
 ## Exemplo aplicado
 
-<! Membro 2 (Emerson Silva) -->
 
 O estilo Pipe and Filter é composto por quatro elementos fundamentais
 [@shaw1996software, cap. 2]:
