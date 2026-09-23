@@ -65,6 +65,8 @@ flowchart LR
     style F3 fill:#2d2d2d,stroke:#888,color:#fff
 ```
 
+## Estrutura e componentes
+
 A seguir, cada elemento é descrito em detalhe.
 
 ### Fonte de dados (*data source*)
@@ -79,7 +81,7 @@ Na prática, uma fonte de dados pode assumir diversas formas:
 
 - Um **arquivo** no sistema de arquivos (CSV, JSON, log de texto).
 - Um **sensor** ou dispositivo de entrada que emite leituras periódicas.
-- Uma **fila de mensagens** (como Kafka ou RabbitMQ) que entrega eventos.
+- Uma **fila de mensagens** (como Kafka ou RabbitMQ) que entrega eventos [@hohpe2003enterprise, cap. 3].
 - Uma **requisição de rede** que fornece dados sob demanda (API REST, socket).
 - A **entrada padrão** (`stdin`) de um terminal — como ocorre em pipelines Unix.
 
