@@ -38,6 +38,44 @@ campo `autores` de cada `content/NN-topico/metadata.yaml` — não edite à mão
 Prof. Matheus Barbosa
 </a>
 </td>
+<td align="center" width="150">
+<a href="https://github.com/thiagoleal435">
+<img src="https://github.com/thiagoleal435.png?size=100" width="100" height="100" style="border-radius:50%" alt="Foto de perfil de Thiago Leal no GitHub"><br>
+Thiago Leal
+</a>
+</td>
+<td align="center" width="150">
+<a href="https://github.com/emersontecn">
+<img src="https://github.com/emersontecn.png?size=100" width="100" height="100" style="border-radius:50%" alt="Foto de perfil de Emerson Silva no GitHub"><br>
+Emerson Silva
+</a>
+</td>
+<td align="center" width="150">
+<a href="https://github.com/Wjdups4964">
+<img src="https://github.com/Wjdups4964.png?size=100" width="100" height="100" style="border-radius:50%" alt="Foto de perfil de José Victor no GitHub"><br>
+José Victor
+</a>
+</td>
+</tr>
+<tr>
+<td align="center" width="150">
+<a href="https://github.com/randsonbredley">
+<img src="https://github.com/randsonbredley.png?size=100" width="100" height="100" style="border-radius:50%" alt="Foto de perfil de Randson Bredley no GitHub"><br>
+Randson Bredley
+</a>
+</td>
+<td align="center" width="150">
+<a href="https://github.com/thiagocpatriota">
+<img src="https://github.com/thiagocpatriota.png?size=100" width="100" height="100" style="border-radius:50%" alt="Foto de perfil de Thiago Patriota no GitHub"><br>
+Thiago Patriota
+</a>
+</td>
+<td align="center" width="150">
+<a href="https://github.com/sig-afk">
+<img src="https://github.com/sig-afk.png?size=100" width="100" height="100" style="border-radius:50%" alt="Foto de perfil de Gustavo Henrique no GitHub"><br>
+Gustavo Henrique
+</a>
+</td>
 </tr>
 </table>
 

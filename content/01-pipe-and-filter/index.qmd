@@ -1,0 +1,286 @@
+---
+title: "Pipe and Filter"
+subtitle: "Processamento de dados como fluxo sequencial de transformações independentes"
+author:
+  - name: "Thiago Leal"
+  - name: "Emerson Silva"
+  - name: "José Victor"
+  - name: "Randson Bredley"
+  - name: "Thiago Patriota"
+  - name: "Gustavo Henrique"
+date: 2026-09-22
+date-modified: last-modified
+bibliography: referencias.bib
+citation:
+  type: webpage
+  container-title: "Guia Aberto de Arquitetura de Software"
+license: "CC BY-NC 4.0"
+keywords: ["pipe and filter", "pipes and filters", "estilo arquitetural", "pipeline"]
+---
+
+::: {.meta-topico}
+<dl>
+<dt>Competências</dt>
+<dd>Descrever a estrutura do estilo Pipe and Filter e avaliar quando adotá-lo</dd>
+<dt>Pré-requisitos</dt>
+<dd>Nenhum</dd>
+<dt>Formatos</dt>
+<dd>
+[texto]{.formato} [notebook](notebook.ipynb){.formato} [áudio]{.formato} [gem]{.formato} [slides](slides.qmd){.formato}
+</dd>
+</dl>
+:::
+
+## Definição e contexto
+
+<!-- TODO: Membro 1 (Thiago Leal) — escrever esta seção -->
+
+O estilo arquitetural Pipe and Filter organiza o processamento de dados como uma
+sequência de transformações independentes — os **filtros** — conectadas por
+canais de comunicação — os **pipes**. Cada filtro recebe dados de entrada,
+aplica uma transformação específica e produz dados de saída, sem conhecer a
+identidade ou a lógica dos filtros que o antecedem ou sucedem na cadeia
+[@shaw1996software, cap. 2].
+
+O problema que motivou esse estilo é recorrente em engenharia de software:
+sistemas que processam fluxos de dados tendem a concentrar toda a lógica de
+transformação em um único componente monolítico. Quando uma etapa do
+processamento precisa mudar — por exemplo, adicionar uma fase de validação ou
+trocar o formato de saída — o desenvolvedor é obrigado a modificar o componente
+inteiro, com risco de quebrar etapas não relacionadas
+[@garlan1993introduction]. Essa dificuldade é uma manifestação direta do
+problema identificado por Parnas: módulos divididos por etapas de processamento,
+em vez de por informação escondida, resistem a mudanças porque cada alteração
+propaga por toda a cadeia [@parnas1972modularization].
+
+A solução proposta pelo estilo Pipe and Filter é decompor o processamento em
+etapas isoladas, cada uma encapsulada em um filtro com interface padronizada. Os
+pipes transportam dados entre filtros sem alterá-los. Essa decomposição permite
+que filtros sejam adicionados, removidos ou reorganizados sem afetar os demais
+[@buschmann1996pattern, cap. 2]. Meunier descreve essa decomposição como uma
+forma natural de expressar transformações sobre dados: cada filtro encapsula uma
+responsabilidade de processamento, e o pipe garante que a comunicação entre
+filtros segue um protocolo uniforme, sem dependências implícitas
+[@meunier1995pipes].
+
+A ideia tem raízes no sistema operacional Unix, onde comandos como `grep`,
+`sort` e `awk` podem ser combinados usando o operador `|` (pipe) para construir
+pipelines complexos a partir de ferramentas simples [@richards2020fundamentals,
+cap. 11]. Esse modelo de composição influenciou profundamente o projeto de
+sistemas de processamento de dados, compiladores, pipelines de ETL e
+arquiteturas de streaming [@hohpe2003enterprise]. A documentação formal desse
+estilo, como descrita por Clements et al., exige que se registrem não apenas os
+componentes e conectores, mas também as restrições de interação: quais
+conexões são permitidas, quais são proibidas e qual o formato de dados nos pipes
+[@clements2010documenting, cap. 4].
+
+## Estrutura e componentes
+
+<!-- TODO: Membro 2 (Emerson Silva) — escrever esta seção -->
+
+O estilo Pipe and Filter é composto por quatro elementos fundamentais
+[@shaw1996software, cap. 2]:
+
+- **Fonte de dados (data source):** ponto de entrada que produz o fluxo inicial
+  de dados para o pipeline.
+- **Filtro (filter):** componente de processamento que recebe dados, aplica uma
+  transformação e emite o resultado. Cada filtro opera de forma independente,
+  sem estado compartilhado com outros filtros.
+- **Pipe:** canal que conecta a saída de um filtro à entrada do próximo,
+  transportando dados sem modificá-los.
+- **Sink (data sink):** ponto final que consome o resultado do último filtro —
+  pode ser um arquivo, um banco de dados ou uma interface de usuário.
+
+A terminologia e a forma de documentar esses elementos seguem as convenções de
+visualizações arquiteturais (views) propostas por Clements et al.: componentes
+(filtros) e conectores (pipes) são representados explicitamente, junto com as
+regras que governam suas interações [@clements2010documenting, cap. 4].
+
+```{mermaid}
+%%| label: fig-pipe-filter
+%%| fig-cap: "Estrutura do estilo Pipe and Filter: dados fluem da fonte ao sink através de filtros conectados por pipes."
+flowchart LR
+    S["🔵 Fonte de dados"] -->|pipe| F1["⚙️ Filtro A"]
+    F1 -->|pipe| F2["⚙️ Filtro B"]
+    F2 -->|pipe| F3["⚙️ Filtro C"]
+    F3 -->|pipe| K["🔴 Sink"]
+```
+
+### Restrições do estilo
+
+O estilo Pipe and Filter impõe restrições importantes, e é a violação delas que
+degrada a arquitetura ao longo do tempo [@bass2021software, cap. 1]. Essas
+restrições são tão centrais quanto a estrutura — um sistema que usa filtros e
+pipes mas viola as restrições abaixo não é uma implementação legítima do estilo:
+
+- **Filtros são independentes:** um filtro não pode invocar diretamente outro
+  filtro nem acessar seu estado interno. Essa independência é o que permite a
+  troca e a recomposição de filtros sem efeitos colaterais.
+- **Comunicação apenas por pipes:** filtros não compartilham memória nem
+  variáveis globais; toda troca de dados passa pelo pipe. Isso garante que a
+  interface entre componentes é explícita e documentável.
+- **Interface uniforme:** todos os filtros leem e escrevem no mesmo formato de
+  dados (ou em formatos compatíveis com adaptadores). Sem uniformidade, a
+  composição livre de filtros se torna impraticável.
+- **Sem ciclos:** o fluxo de dados é unidirecional; filtros não enviam dados de
+  volta a filtros anteriores no pipeline. Ciclos transformam o pipeline em um
+  grafo de dependências, dificultando a análise e o rastreamento de dados.
+
+Essas restrições decorrem diretamente do princípio de Parnas: cada filtro
+encapsula uma decisão de projeto (a transformação que aplica) e expõe apenas sua
+interface de entrada e saída [@parnas1972modularization]. Quando um filtro
+precisa conhecer detalhes internos de outro, a decomposição modular foi violada.
+
+### Variantes
+
+Existem variantes do padrão básico que relaxam ou estendem algumas restrições.
+Meunier categoriza essas variantes pelo grau de liberdade na topologia da
+conexão entre filtros [@meunier1995pipes]:
+
+- **Pipeline linear:** a forma mais simples, com filtros em sequência estrita.
+  É a variante mais comum e a mais fácil de raciocinar sobre.
+- **Pipeline com ramificação (tee):** um pipe alimenta dois ou mais filtros em
+  paralelo, como o comando `tee` do Unix. Útil quando o mesmo fluxo de dados
+  precisa ser processado de formas diferentes simultaneamente.
+- **Pipeline com feedback:** permite que dados retornem a um estágio anterior —
+  raro e cuidadosamente controlado, usado em sistemas de controle. Essa variante
+  introduz complexidade significativa e deve ser documentada explicitamente
+  como uma exceção ao modelo unidirecional.
+
+## Exemplo aplicado
+
+<!-- TODO: Membro 3 (José Victor) — escrever esta seção e o notebook -->
+
+Para ilustrar o estilo Pipe and Filter, considere um **pipeline de
+processamento de texto** que recebe um texto bruto e produz uma análise de
+frequência de palavras. O pipeline é composto por quatro filtros:
+
+1. **Normalizar:** converte o texto para minúsculas e remove pontuação.
+2. **Tokenizar:** divide o texto em palavras individuais.
+3. **Filtrar stop words:** remove palavras comuns sem valor semântico (como "o",
+   "de", "é").
+4. **Contar frequências:** calcula quantas vezes cada palavra aparece.
+
+```{mermaid}
+%%| label: fig-exemplo-pipeline
+%%| fig-cap: "Pipeline de processamento de texto usando Pipe and Filter."
+flowchart LR
+    IN["📄 Texto bruto"] -->|pipe| F1["Normalizar"]
+    F1 -->|pipe| F2["Tokenizar"]
+    F2 -->|pipe| F3["Filtrar stop words"]
+    F3 -->|pipe| F4["Contar frequências"]
+    F4 -->|pipe| OUT["📊 Frequências"]
+```
+
+Cada filtro tem responsabilidade única e pode ser testado isoladamente.
+Trocar o filtro de stop words por uma versão em inglês, por exemplo, não exige
+alterar nenhum outro filtro — basta substituir o componente no pipeline.
+
+### A violação
+
+O que acontece quando a restrição de independência é violada? Considere que o
+filtro de contagem acessa diretamente o filtro de normalização para verificar a
+configuração de idioma. Isso cria um acoplamento direto que impede a troca
+independente dos filtros e dificulta o teste isolado — exatamente o tipo de
+degradação que o estilo busca evitar [@shaw1996software, cap. 2].
+
+### A consequência mensurável
+
+No notebook, medimos o impacto: a versão correta permite substituir filtros sem
+alterar o restante do pipeline; a versão violada exige modificar dois
+componentes para uma mudança que deveria afetar apenas um. O acoplamento
+eferente dobra.
+
+::: {.callout-note}
+## Exemplo executável
+O notebook deste tópico está em
+[`notebook.ipynb`](notebook.ipynb) e pode ser aberto direto no
+[Google Colab](https://colab.research.google.com/).
+
+O notebook precisa rodar de ponta a ponta em ambiente limpo. Teste no Colab antes
+de abrir o PR — funcionar na sua máquina não é suficiente.
+:::
+
+## Trade-offs
+
+<!-- TODO: Membro 4 (Randson Bredley) — escrever esta seção -->
+
+Nenhum estilo arquitetural é melhor que outro em abstrato: cada um favorece
+certos atributos de qualidade ao custo de outros [@richards2020fundamentals,
+cap. 11]. O Pipe and Filter não é exceção.
+
+A principal força desse estilo é a **reusabilidade e composição**: filtros com
+interface padronizada podem ser recombinados em pipelines diferentes para
+resolver problemas distintos, da mesma forma que comandos Unix podem ser
+encadeados livremente [@shaw1996software, cap. 2]. Meunier descreve essa
+propriedade como a essência do padrão: o valor não está nos filtros individuais,
+mas na capacidade de combiná-los em configurações novas sem modificação
+[@meunier1995pipes].
+
+No entanto, isso vem com custos. A transformação de dados entre filtros impõe
+overhead: cada pipe precisa serializar e desserializar os dados, e o formato
+comum pode não ser o mais eficiente para cada filtro individual
+[@bass2021software, cap. 13]. Além disso, o processamento sequencial limita o
+paralelismo natural do pipeline, a menos que filtros possam operar sobre
+diferentes porções do fluxo de dados simultaneamente. Outro desafio arquitetural
+frequente envolve o tratamento e a propagação de erros e exceções ao longo da cadeia:
+quando um filtro intermediário encontra uma entrada malformada ou falha durante sua
+transformação, o pipeline precisa dispor de mecanismos bem definidos para descarte,
+registro em trilha de auditoria ou roteamento alternativo (como filas de mensagens mortas
+ou dead-letter channels), evitando que uma inconsistência pontual interrompa o processamento
+dos demais itens válidos em um fluxo contínuo de alta vazão.
+
+{{< include _trade-offs.md >}}
+
+## Quando usar e quando não usar
+
+<!-- TODO: Membro 4 (Randson Bredley) — escrever esta seção -->
+
+**Considere usar quando:**
+
+- O processamento pode ser decomposto em etapas sequenciais independentes
+  (compiladores, pipelines de ETL, processamento de sinais)
+- Filtros precisam ser reutilizados em contextos diferentes
+- O sistema precisa permitir troca ou reordenação de etapas sem reescrita
+- Equipes diferentes mantêm filtros diferentes e precisam evoluir de forma
+  independente
+
+**Evite quando:**
+
+- O processamento exige interação significativa entre etapas (trocas de
+  mensagens bidirecionais, estado compartilhado)
+- A latência é crítica e o overhead de serialização entre pipes é proibitivo
+- A lógica de negócio não se decompõe naturalmente em transformações
+  independentes — forçar a decomposição cria filtros artificiais que apenas
+  repassam dados
+
+**Sinais de que a escolha foi errada:**
+
+- Filtros que precisam consultar o estado interno de outros filtros para operar
+- Pipes que transportam objetos complexos com dezenas de campos, dos quais cada
+  filtro usa apenas dois ou três
+- Um filtro "orquestrador" que coordena a execução dos demais, transformando o
+  pipeline em uma arquitetura centralizada disfarçada
+
+::: {.callout-note}
+## Slides deste tópico
+A apresentação está em [`slides.qmd`](slides.qmd) — 16 slides para uma fala de
+20 minutos, com os mesmos exemplos e trade-offs deste texto.
+:::
+
+## Referências
+
+As referências abaixo são geradas automaticamente a partir de `referencias.bib`.
+Não escreva esta lista à mão.
+
+::: {#refs}
+:::
+
+::: {.como-citar}
+**Como citar este tópico**
+
+Thiago Leal; Emerson Silva; José Victor; Randson Bredley; Thiago Patriota;
+Gustavo Henrique. "Pipe and Filter".
+*Guia Aberto de Arquitetura de Software*, 2026. Disponível em:
+<https://ifpe-belojardim-es.github.io/guia-arquitetura-de-software/content/01-pipe-and-filter/>. Licenciado sob CC BY-NC 4.0.
+:::

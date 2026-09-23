@@ -1,0 +1,192 @@
+---
+title: "Pipe and Filter"
+subtitle: "Processamento de dados como fluxo sequencial de transformações independentes"
+author:
+  - "Thiago Leal"
+  - "Emerson Silva"
+  - "José Victor"
+  - "Randson Bredley"
+  - "Thiago Patriota"
+  - "Gustavo Henrique"
+date: 2026-09-22
+bibliography: referencias.bib
+format:
+  revealjs:
+    theme: default
+    lang: pt-BR
+    slide-number: c/t
+    slide-level: 2
+    incremental: false
+    code-overflow: wrap
+    link-external-newwindow: true
+    footer: "Guia Aberto de Arquitetura de Software · CC BY-NC 4.0"
+---
+
+## Roteiro
+
+1. O problema que veio antes da solução
+2. Definição e origem
+3. Estrutura e restrições
+4. Exemplo aplicado e a violação
+5. Trade-offs
+6. Critérios de decisão
+
+## O problema
+
+Sistemas que processam fluxos de dados tendem a concentrar toda a lógica em
+um único componente monolítico:
+
+- Mudar uma etapa exige modificar o sistema inteiro
+- Testar uma transformação exige montar o pipeline completo
+- Reusar uma etapa em outro contexto é impraticável
+
+::: {.notes}
+Abrir pelo problema concreto: a dificuldade de manter sistemas monolíticos de
+processamento de dados. Perguntar à plateia se já enfrentaram isso.
+:::
+
+## Definição
+
+> O estilo Pipe and Filter decompõe o processamento de dados em uma cadeia de
+> transformações independentes (filtros) conectadas por canais (pipes).
+
+Cada filtro recebe entrada, transforma e produz saída — sem conhecer seus
+vizinhos [@shaw1996software, cap. 2].
+
+## Origem: o Unix
+
+O operador `|` do Unix é a materialização do estilo:
+
+```bash
+cat access.log | grep "404" | sort | uniq -c | sort -rn | head -10
+```
+
+Seis ferramentas simples, combinadas em um pipeline complexo
+[@richards2020fundamentals, cap. 11].
+
+::: {.notes}
+Mostrar que a ideia não é nova — tem mais de 50 anos — e que o Unix é a prova
+de que funciona em escala.
+:::
+
+## Estrutura
+
+```{mermaid}
+flowchart LR
+    S["🔵 Fonte"] -->|pipe| F1["⚙️ Filtro A"]
+    F1 -->|pipe| F2["⚙️ Filtro B"]
+    F2 -->|pipe| F3["⚙️ Filtro C"]
+    F3 -->|pipe| K["🔴 Sink"]
+```
+
+Quatro componentes: **fonte**, **filtros**, **pipes** e **sink**
+[@buschmann1996pattern, cap. 2].
+
+## Componentes em detalhe
+
+- **Fonte (data source):** produz o fluxo inicial de dados
+- **Filtro (filter):** aplica uma transformação, sem estado compartilhado
+- **Pipe:** transporta dados entre filtros, sem modificá-los
+- **Sink (data sink):** consome o resultado final
+
+## O que o estilo proíbe
+
+Um estilo se define tanto pelas conexões que autoriza quanto pelas que
+veda [@bass2021software, cap. 1]:
+
+- Filtros **não** invocam outros filtros diretamente
+- Filtros **não** compartilham memória ou variáveis globais
+- O fluxo de dados é **unidirecional** — sem ciclos
+- A interface de entrada e saída é **uniforme**
+
+## Variantes
+
+- **Pipeline linear:** filtros em sequência estrita
+- **Com ramificação (tee):** um pipe alimenta dois ou mais filtros em paralelo
+- **Com feedback:** dados retornam a um estágio anterior — raro e controlado
+
+## Exemplo: pipeline de texto
+
+```{mermaid}
+flowchart LR
+    IN["📄 Texto"] -->|pipe| F1["Normalizar"]
+    F1 -->|pipe| F2["Tokenizar"]
+    F2 -->|pipe| F3["Remover stop words"]
+    F3 -->|pipe| F4["Contar frequências"]
+    F4 -->|pipe| OUT["📊 Resultado"]
+```
+
+Cada filtro tem responsabilidade única e pode ser testado isoladamente.
+
+## A implementação correta
+
+```python
+def pipeline(dado, *filtros):
+    resultado = dado
+    for filtro in filtros:
+        resultado = filtro(resultado)
+    return resultado
+
+resultado = pipeline(texto, normalizar, tokenizar,
+                     filtrar_stops, contar_frequencias)
+```
+
+Filtros são funções puras: entrada → transformação → saída.
+
+## A violação
+
+```python
+def contar_frequencias(palavras):
+    idioma = normalizar.get_idioma()  # ← ACOPLAMENTO DIRETO
+    stops = carregar_stops(idioma)
+    ...
+```
+
+O filtro de contagem acessa diretamente o filtro de normalização.
+Isso impede a troca independente dos componentes.
+
+## A consequência
+
+Sem número, é opinião. Com a violação:
+
+- Trocar o filtro de normalização exige modificar 2 componentes
+- O acoplamento eferente **dobra**
+- Testar o filtro de contagem exige montar o filtro de normalização
+
+## Trade-offs {.smaller}
+
+{{< include _trade-offs.md >}}
+
+::: {.notes}
+Esta tabela vem do mesmo `_trade-offs.md` incluído no index.qmd — editar em um
+lugar atualiza texto e slides.
+:::
+
+## Escalabilidade: em que dimensão?
+
+"É mais escalável" não diz nada. Pipe and Filter escala em:
+
+- ✅ **Composição:** novos filtros entram sem reescrever o pipeline
+- ✅ **Equipes:** cada filtro pode ser mantido por pessoas diferentes
+- ⚠️ **Requisições simultâneas:** depende da implementação
+- ❌ **Latência:** cada pipe adiciona overhead de serialização
+
+## Quando usar
+
+- O processamento se decompõe em etapas sequenciais independentes
+- Filtros precisam ser reutilizados em contextos diferentes
+- O sistema precisa permitir troca de etapas sem reescrita
+- Exemplos: compiladores, ETL, processamento de sinais, análise de logs
+
+## Quando evitar
+
+- O processamento exige interação bidirecional entre etapas
+- A latência é crítica e o overhead de serialização é proibitivo
+- A lógica não se decompõe naturalmente em transformações independentes
+
+**Sinal de alerta:** um filtro "orquestrador" que coordena os demais.
+
+## Referências {.smaller}
+
+::: {#refs}
+:::
