@@ -156,12 +156,8 @@ ao custo de outros [@richards2020fundamentals, cap. 11].
 
 ## Trade-offs em uma tabela {.smaller}
 
-| Atributo | Efeito | Por quê |
-|---|---|---|
-| Reusabilidade / composição | Favorecida | Filtros com interface padronizada podem ser recombinados em pipelines diferentes, como comandos Unix encadeados |
-| Desempenho | Comprometido | Cada pipe serializa e desserializa dados entre filtros, somando overhead |
-| Paralelismo | Parcialmente comprometido | O fluxo é sequencial por natureza; só ganha paralelismo se filtros puderem operar sobre partições distintas do fluxo |
-| Tratamento de erros | Exige desenho explícito | Falha em um filtro intermediário precisa de descarte, log de auditoria ou rota alternativa (dead-letter), sob risco de travar o pipeline inteiro |
+{{< include _trade-offs.md >}}
+
 
 ## Quando usar
 
