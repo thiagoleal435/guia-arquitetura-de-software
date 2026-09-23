@@ -33,6 +33,7 @@ keywords: ["pipe and filter", "pipes and filters", "estilo arquitetural", "pipel
 
 ## Definição e contexto
 
+<!-- TODO: Membro 2 (Emerson Silva) — escrever esta seção -->
 
 O estilo Pipe and Filter é composto por quatro elementos fundamentais que,
 juntos, definem tanto a topologia quanto o comportamento do sistema
@@ -242,6 +243,7 @@ flowchart LR
 
 ## Exemplo aplicado
 
+<! Membro 2 (Emerson Silva) -->
 
 O estilo Pipe and Filter é composto por quatro elementos fundamentais
 [@shaw1996software, cap. 2]:
@@ -444,5 +446,5 @@ Não escreva esta lista à mão.
 Thiago Leal; Emerson Silva; José Victor; Randson Bredley; Thiago Patriota;
 Gustavo Henrique. "Pipe and Filter".
 *Guia Aberto de Arquitetura de Software*, 2026. Disponível em:
-<https://ifpe-belojardim-es.github.io/guia-arquitetura-de-software/content/01-pipe-and-filter/>. Licenciado sob CC BY-NC 4.0.
+<https://ifpe-belojardim-es.github.io/guia-arquitetura-de-software/content/03-pipe-and-filter/>. Licenciado sob CC BY-NC 4.0.
 :::
