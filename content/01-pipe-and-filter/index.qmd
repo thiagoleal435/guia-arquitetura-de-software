@@ -149,7 +149,6 @@ conexão entre filtros [@meunier1995pipes]:
 
 ## Exemplo aplicado
 
-<!-- TODO: Membro 3 (José Victor) — escrever esta seção e o notebook -->
 
 Para ilustrar o estilo Pipe and Filter, considere um **pipeline de
 processamento de texto** que recebe um texto bruto e produz uma análise de
