@@ -9,6 +9,7 @@ author:
   - "Thiago Patriota"
   - "Gustavo Henrique"
 date: 2026-09-22
+date-modified: last-modified
 bibliography: referencias.bib
 format:
   revealjs:
@@ -31,171 +32,153 @@ format:
 5. Trade-offs
 6. Critérios de decisão
 
-## O problema
+## O problema que motivou o estilo
 
-Sistemas que processam fluxos de dados tendem a concentrar toda a lógica em
-um único componente monolítico:
+Sistemas que processam fluxos de dados tendem a concentrar toda a lógica de
+transformação em um único componente monolítico.
 
-- Mudar uma etapa exige modificar o sistema inteiro
-- Testar uma transformação exige montar o pipeline completo
-- Reusar uma etapa em outro contexto é impraticável
+- Mudar uma etapa (ex.: adicionar validação) obriga a mexer no bloco inteiro
+- O risco de quebrar etapas não relacionadas cresce a cada mudança
+- É a mesma dificuldade descrita por Parnas: módulos divididos por etapa de
+  processamento, não por informação escondida, resistem a mudanças
+  [@parnas1972modularization]
 
 ::: {.notes}
-Abrir pelo problema concreto: a dificuldade de manter sistemas monolíticos de
-processamento de dados. Perguntar à plateia se já enfrentaram isso.
+Abrir pelo problema, não pela solução — quem entende a dor entende por que o
+estilo existe.
 :::
 
 ## Definição
 
-> O estilo Pipe and Filter decompõe o processamento de dados em uma cadeia de
-> transformações independentes (filtros) conectadas por canais (pipes).
+> **Pipe and Filter** organiza o processamento como uma sequência de
+> transformações independentes (**filtros**), conectadas por canais de
+> comunicação (**pipes**) [@shaw1996software, cap. 2].
 
-Cada filtro recebe entrada, transforma e produz saída — sem conhecer seus
-vizinhos [@shaw1996software, cap. 2].
+Cada filtro recebe dados, transforma e produz saída — sem conhecer a lógica
+dos filtros vizinhos.
 
-## Origem: o Unix
+## De onde vem a ideia
 
-O operador `|` do Unix é a materialização do estilo:
+- Raiz no Unix: `grep`, `sort`, `awk` combinados com `|` para montar
+  pipelines complexos a partir de ferramentas simples [@richards2020fundamentals, cap. 11]
+- Formalizado como padrão arquitetural por Meunier, que descreve o pipe como
+  garantia de um protocolo uniforme entre filtros [@meunier1995pipes]
+- Influenciou compiladores, ETL e arquiteturas de streaming
 
-```bash
-cat access.log | grep "404" | sort | uniq -c | sort -rn | head -10
-```
+## Estrutura: quatro elementos
 
-Seis ferramentas simples, combinadas em um pipeline complexo
-[@richards2020fundamentals, cap. 11].
+- **Fonte de dados** — ponto de entrada do fluxo
+- **Filtro** — processa e transforma, sem estado compartilhado com outros
+- **Pipe** — transporta dados entre filtros, sem alterá-los
+- **Sink** — consome o resultado final
 
 ::: {.notes}
-Mostrar que a ideia não é nova — tem mais de 50 anos — e que o Unix é a prova
-de que funciona em escala.
+Terminologia segue as convenções de componentes e conectores de
+Clements et al. [@clements2010documenting, cap. 4].
 :::
 
-## Estrutura
+## Estrutura em diagrama
 
 ```{mermaid}
 flowchart LR
-    S["🔵 Fonte"] -->|pipe| F1["⚙️ Filtro A"]
+    S["🔵 Fonte de dados"] -->|pipe| F1["⚙️ Filtro A"]
     F1 -->|pipe| F2["⚙️ Filtro B"]
     F2 -->|pipe| F3["⚙️ Filtro C"]
     F3 -->|pipe| K["🔴 Sink"]
 ```
 
-Quatro componentes: **fonte**, **filtros**, **pipes** e **sink**
-[@buschmann1996pattern, cap. 2].
-
-## Componentes em detalhe
-
-- **Fonte (data source):** produz o fluxo inicial de dados
-- **Filtro (filter):** aplica uma transformação, sem estado compartilhado
-- **Pipe:** transporta dados entre filtros, sem modificá-los
-- **Sink (data sink):** consome o resultado final
-
 ## O que o estilo proíbe
 
-Um estilo se define tanto pelas conexões que autoriza quanto pelas que
-veda [@bass2021software, cap. 1]:
+Restrições que, se violadas, degradam a arquitetura [@bass2021software, cap. 1]:
 
-- Filtros **não** invocam outros filtros diretamente
-- Filtros **não** compartilham memória ou variáveis globais
-- O fluxo de dados é **unidirecional** — sem ciclos
-- A interface de entrada e saída é **uniforme**
+- Filtro não invoca outro filtro nem acessa seu estado interno
+- Comunicação só por pipes — nunca por memória compartilhada
+- Interface de dados uniforme entre filtros
+- Sem ciclos: o fluxo é unidirecional
 
-## Variantes
+## Variantes do padrão
 
-- **Pipeline linear:** filtros em sequência estrita
-- **Com ramificação (tee):** um pipe alimenta dois ou mais filtros em paralelo
-- **Com feedback:** dados retornam a um estágio anterior — raro e controlado
+Meunier categoriza pelo grau de liberdade na topologia [@meunier1995pipes]:
 
-## Exemplo: pipeline de texto
+- **Linear** — sequência estrita, a mais comum
+- **Com ramificação (tee)** — um pipe alimenta vários filtros em paralelo
+- **Com feedback** — dados retornam a um estágio anterior; raro e arriscado
+
+## Exemplo aplicado
+
+Pipeline de processamento de texto → frequência de palavras:
+
+1. **Normalizar** — minúsculas, remove pontuação
+2. **Tokenizar** — divide em palavras
+3. **Filtrar stop words** — remove palavras sem valor semântico
+4. **Contar frequências**
+
+Cada filtro é testável isoladamente e substituível sem tocar nos demais.
+
+## Exemplo em diagrama
 
 ```{mermaid}
 flowchart LR
-    IN["📄 Texto"] -->|pipe| F1["Normalizar"]
+    IN["📄 Texto bruto"] -->|pipe| F1["Normalizar"]
     F1 -->|pipe| F2["Tokenizar"]
-    F2 -->|pipe| F3["Remover stop words"]
+    F2 -->|pipe| F3["Filtrar stop words"]
     F3 -->|pipe| F4["Contar frequências"]
-    F4 -->|pipe| OUT["📊 Resultado"]
+    F4 -->|pipe| OUT["📊 Frequências"]
 ```
-
-Cada filtro tem responsabilidade única e pode ser testado isoladamente.
-
-## A implementação correta
-
-```python
-def pipeline(dado, *filtros):
-    resultado = dado
-    for filtro in filtros:
-        resultado = filtro(resultado)
-    return resultado
-
-resultado = pipeline(texto, normalizar, tokenizar,
-                     filtrar_stops, contar_frequencias)
-```
-
-Filtros são funções puras: entrada → transformação → saída.
 
 ## A violação
 
-```python
-def contar_frequencias(palavras):
-    idioma = normalizar.get_idioma()  # ← ACOPLAMENTO DIRETO
-    stops = carregar_stops(idioma)
-    ...
-```
+E se o filtro de contagem acessar direto o filtro de normalização para
+checar o idioma configurado?
 
-O filtro de contagem acessa diretamente o filtro de normalização.
-Isso impede a troca independente dos componentes.
+- Cria acoplamento direto entre dois filtros
+- Impede a troca independente de qualquer um dos dois
+- Dificulta o teste isolado — exatamente o que o estilo evita [@shaw1996software, cap. 2]
 
-## A consequência
+## A consequência mensurável
 
-Sem número, é opinião. Com a violação:
+No notebook deste tópico, comparamos as duas versões:
 
-- Trocar o filtro de normalização exige modificar 2 componentes
-- O acoplamento eferente **dobra**
-- Testar o filtro de contagem exige montar o filtro de normalização
+- **Correta:** trocar um filtro não exige tocar nos demais
+- **Violada:** a mesma troca exige alterar dois componentes
+- O acoplamento eferente **dobra** na versão violada
 
-## Trade-offs {.smaller}
+## Trade-offs
 
-{{< include _trade-offs.md >}}
+Nenhum estilo é melhor em abstrato — cada um favorece atributos de qualidade
+ao custo de outros [@richards2020fundamentals, cap. 11].
 
-::: {.notes}
-Esta tabela vem do mesmo `_trade-offs.md` incluído no index.qmd — editar em um
-lugar atualiza texto e slides.
-:::
+- **Força:** reusabilidade e composição de filtros [@meunier1995pipes]
+- **Custo:** overhead de serialização entre pipes [@bass2021software, cap. 13]
+- **Custo:** paralelismo limitado pelo fluxo sequencial
+- **Custo:** tratamento de erros exige desenho explícito (ex.: dead-letter
+  channels) [@hohpe2003enterprise]
 
-## Escalabilidade: em que dimensão?
+## Trade-offs em uma tabela {.smaller}
 
-"É mais escalável" não diz nada. Pipe and Filter escala em:
-
-- ✅ **Composição:** novos filtros entram sem reescrever o pipeline
-- ✅ **Equipes:** cada filtro pode ser mantido por pessoas diferentes
-- ⚠️ **Requisições simultâneas:** depende da implementação
-- ❌ **Latência:** cada pipe adiciona overhead de serialização
-
-## Citações e referências
-
-A apresentação e o texto usam o mesmo padrão de citação:
-
-- As referências ficam em `referencias.bib`
-- Os trechos citados usam `[ @chave ]` ou `[@chave, cap. 2]`
-- Cada entrada precisa de ano e um identificador localizável (DOI, URL ou ISBN)
-- A lista final de referências é gerada automaticamente no final do tópico
-
-Isso mantém a rastreabilidade acadêmica e evita citações soltas ou incompletas.
+| Atributo | Efeito | Por quê |
+|---|---|---|
+| Reusabilidade / composição | Favorecida | Filtros com interface padronizada podem ser recombinados em pipelines diferentes, como comandos Unix encadeados |
+| Desempenho | Comprometido | Cada pipe serializa e desserializa dados entre filtros, somando overhead |
+| Paralelismo | Parcialmente comprometido | O fluxo é sequencial por natureza; só ganha paralelismo se filtros puderem operar sobre partições distintas do fluxo |
+| Tratamento de erros | Exige desenho explícito | Falha em um filtro intermediário precisa de descarte, log de auditoria ou rota alternativa (dead-letter), sob risco de travar o pipeline inteiro |
 
 ## Quando usar
 
-- O processamento se decompõe em etapas sequenciais independentes
-- Filtros precisam ser reutilizados em contextos diferentes
-- O sistema precisa permitir troca de etapas sem reescrita
-- Exemplos: compiladores, ETL, processamento de sinais, análise de logs
+- Processamento decomponível em etapas sequenciais independentes
+  (compiladores, ETL, processamento de sinais)
+- Filtros que precisam ser reaproveitados em contextos diferentes
+- Necessidade de trocar ou reordenar etapas sem reescrever o sistema
+- Equipes diferentes mantendo filtros diferentes, de forma independente
 
 ## Quando evitar
 
-- O processamento exige interação bidirecional entre etapas
-- A latência é crítica e o overhead de serialização é proibitivo
-- A lógica não se decompõe naturalmente em transformações independentes
+- Interação forte entre etapas (mensagens bidirecionais, estado compartilhado)
+- Latência crítica, onde o overhead de serialização é proibitivo
+- Lógica de negócio que não se decompõe naturalmente em transformações
 
-**Sinal de alerta:** um filtro "orquestrador" que coordena os demais.
+**Sinal de escolha errada:** um filtro "orquestrador" que coordena os
+demais — a arquitetura centralizada disfarçada de pipeline.
 
 ## Referências {.smaller}
 
