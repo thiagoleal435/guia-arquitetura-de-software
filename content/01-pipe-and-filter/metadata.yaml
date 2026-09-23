@@ -68,7 +68,7 @@ formatos:
   audio_notebooklm:
     entregue: true
     arquivo: ""
-    url: "https://notebooklm.google.com/notebook/01-pipe-and-filter"
+    url: "https://notebook.google.com/notebook/5a841bab-11a0-4150-a39a-3b9a14a6940f/artifact/a221b462-5454-4f16-8b70-225ebafce212?utm_source=nlm_web_share&utm_medium=google_oo&utm_campaign=art_share_1&utm_content=&utm_smc=nlm_web_share_google_oo_art_share_1_"
     duracao_min: 10
     transcricao: "assets/audio-transcricao.md"
   gem_gemini:
