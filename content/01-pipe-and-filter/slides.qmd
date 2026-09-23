@@ -171,6 +171,17 @@ lugar atualiza texto e slides.
 - ⚠️ **Requisições simultâneas:** depende da implementação
 - ❌ **Latência:** cada pipe adiciona overhead de serialização
 
+## Citações e referências
+
+A apresentação e o texto usam o mesmo padrão de citação:
+
+- As referências ficam em `referencias.bib`
+- Os trechos citados usam `[ @chave ]` ou `[@chave, cap. 2]`
+- Cada entrada precisa de ano e um identificador localizável (DOI, URL ou ISBN)
+- A lista final de referências é gerada automaticamente no final do tópico
+
+Isso mantém a rastreabilidade acadêmica e evita citações soltas ou incompletas.
+
 ## Quando usar
 
 - O processamento se decompõe em etapas sequenciais independentes
