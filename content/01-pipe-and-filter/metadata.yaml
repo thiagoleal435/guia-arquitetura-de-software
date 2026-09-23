@@ -64,7 +64,7 @@ formatos:
   texto: true
   notebook:
     entregue: true
-    colab_url: "https://colab.research.google.com/..."
+    colab_url: "https://colab.research.google.com/drive/1FqKE4d6d5e4zQp9AeZNTi8hFgcVFrHRc#scrollTo=pIsUXaD4-iqv"
   audio_notebooklm:
     entregue: true
     arquivo: ""
