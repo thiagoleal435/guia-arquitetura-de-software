@@ -241,7 +241,7 @@ flowchart LR
 
 ## Exemplo aplicado
 
-<!-- TODO: Membro 2 (Emerson Silva) — escrever esta seção -->
+<! Membro 2 (Emerson Silva) -->
 
 O estilo Pipe and Filter é composto por quatro elementos fundamentais
 [@shaw1996software, cap. 2]:
