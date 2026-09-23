@@ -367,11 +367,15 @@ de abrir o PR — funcionar na sua máquina não é suficiente.
 
 ## Trade-offs
 
-<!-- TODO: Membro 4 (Randson Bredley) — escrever esta seção -->
-
 Nenhum estilo arquitetural é melhor que outro em abstrato: cada um favorece
 certos atributos de qualidade ao custo de outros [@richards2020fundamentals,
 cap. 11]. O Pipe and Filter não é exceção.
+
+Adotar o padrão Pipe and Filter envolve equilibrar compromissos arquiteturais importantes no design do sistema:
+
+- **Flexibilidade vs. Desempenho**: Ganha-se alta flexibilidade para reconfigurar etapas e reutilizar filtros, mas perde-se desempenho devido ao overhead constante de serialização, conversão de dados e passagem de mensagens entre os tubos [@bass2021software, cap. 13].
+- **Desacoplamento vs. Rastreabilidade de Erros**: O forte isolamento entre os filtros simplifica os testes unitários, mas dificulta o rastreamento do fluxo de execução em tempo de execução, tornando a depuração e o tratamento de exceções globais mais complexos.
+- **Escalabilidade vs. Complexidade de Infraestrutura**: A capacidade de executar filtros de forma distribuída e paralela melhora a vazão de dados (*throughput*), mas exige uma infraestrutura mais complexa para gerenciar filas, buffers de memória e monitoramento do pipeline.
 
 A principal força desse estilo é a **reusabilidade e composição**: filtros com
 interface padronizada podem ser recombinados em pipelines diferentes para
@@ -398,25 +402,19 @@ dos demais itens válidos em um fluxo contínuo de alta vazão.
 
 ## Quando usar e quando não usar
 
-<!-- TODO: Membro 4 (Randson Bredley) — escrever esta seção -->
-
 **Considere usar quando:**
 
-- O processamento pode ser decomposto em etapas sequenciais independentes
-  (compiladores, pipelines de ETL, processamento de sinais)
-- Filtros precisam ser reutilizados em contextos diferentes
-- O sistema precisa permitir troca ou reordenação de etapas sem reescrita
-- Equipes diferentes mantêm filtros diferentes e precisam evoluir de forma
-  independente
+- **Processamento em Etapas Independentes**: Quando a tarefa principal pode ser dividida de forma natural em uma sequência de etapas independentes de processamento ou transformação.
+- **Requisitos de Dados Variáveis**: Quando o sistema precisa de flexibilidade para alterar a ordem das etapas, adicionar novas validações ou remover filtros dependendo do tipo de dado recebido.
+- **Reutilização de Componentes**: Quando etapas de processamento específicas (como autenticação, higienização ou conversão de formato) precisam ser reutilizadas em diferentes fluxos da aplicação.
+- **Processamento Paralelo ou Concorrente**: Quando partes do pipeline se beneficiam de execução simultânea em diferentes threads ou servidores para otimizar o tempo de resposta global.
 
 **Evite quando:**
 
-- O processamento exige interação significativa entre etapas (trocas de
-  mensagens bidirecionais, estado compartilhado)
-- A latência é crítica e o overhead de serialização entre pipes é proibitivo
-- A lógica de negócio não se decompõe naturalmente em transformações
-  independentes — forçar a decomposição cria filtros artificiais que apenas
-  repassam dados
+- **Operações Altamente Interativas**: Quando o sistema exige interação contínua e em tempo real com o usuário, pois a natureza assíncrona ou em fluxo contínuo do pipeline pode introduzir latência indesejada.
+- **Dependência de Estado Compartilhado**: Quando as etapas dependem fortemente do mesmo estado ou precisam acessar dados globais complexos para tomar decisões.
+- **Fluxos Pequenos e Simples**: Quando o processamento é direto e possui poucas operações, tornando a criação de tubos e filtros um exagero de engenharia (*overengineering*).
+- **Transações com Necessidade de Rollback Frequente**: Quando o processo exige forte consistência transacional (ACID), pois desfazer alterações em etapas que já enviaram dados pelos tubos é extremamente complexo.
 
 **Sinais de que a escolha foi errada:**
 
