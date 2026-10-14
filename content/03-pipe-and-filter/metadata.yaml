@@ -45,8 +45,29 @@ status: "rascunho"        # rascunho | em-revisao | publicado | modelo
 data_criacao: "2026-09-22"
 ultima_revisao: "2026-09-22"
 revisado_por:
-  - ""
-  - ""
+  - nome: "Ian Képler dos Santos Araújo"
+    grupo: "Grupo 2"
+    github: "iankepler5"
+
+  - nome: "João Gabriel Marcos da Silva"
+    grupo: "Grupo 2"
+    github: "Jgabriel1800"
+
+  - nome: "João Lucas da Silva Soares Oliveria"
+    grupo: "Grupo 2"
+    github: "jwaoluckas"
+
+  - nome: "David Soares da Silva"
+    grupo: "Grupo 2"
+    github: "DavidSoares18"
+
+  - nome: "Lucas Matheus"
+    grupo: "Grupo 2"
+    github: "teixeiralucs"
+
+  - nome: "Antonio Mario Jesus Vidal Leite"
+    grupo: "Grupo 2"
+    github: "amjvidal"
 
 # Estrutura pedagógica
 competencias:
