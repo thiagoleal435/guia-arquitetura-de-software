@@ -81,10 +81,11 @@ Clements et al. [@clements2010documenting, cap. 4].
 
 ```{mermaid}
 flowchart LR
-    S["🔵 Fonte de dados"] -->|pipe| F1["⚙️ Filtro A"]
-    F1 -->|pipe| F2["⚙️ Filtro B"]
-    F2 -->|pipe| F3["⚙️ Filtro C"]
-    F3 -->|pipe| K["🔴 Sink"]
+    Pump["🔵 Pump (Fonte)<br/><i>Ingestão bruta</i>"] ==>|pipe: texto| F1["⚙️ Normalizar<br/><i>Limpa pontuação</i>"]
+    F1 ==>|pipe: normalizado| F2["⚙️ Tokenizar<br/><i>Segmenta palavras</i>"]
+    F2 ==>|pipe: tokens| F3["⚙️ Filtrar<br/><i>Remove stopwords</i>"]
+    F3 ==>|pipe: limpos| F4["⚙️ Contar<br/><i>Calcula frequências</i>"]
+    F4 ==>|pipe: resultado| Sink["🔴 Sink (Destino)<br/><i>Consumo final</i>"]
 ```
 
 ## O que o estilo proíbe

@@ -84,29 +84,32 @@ suas interações [@clements2010documenting, cap. 4].
 
 ```{mermaid}
 %%| label: fig-pipe-filter
-%%| fig-cap: "Estrutura do estilo Pipe and Filter: dados fluem da fonte ao sink através de filtros conectados por pipes. As anotações indicam o tipo de dado transportado em cada estágio."
+%%| fig-cap: "Estrutura do estilo Pipe and Filter: o Pump (fonte) injeta os dados no fluxo, onde cada filtro aplica uma transformação específica e independente, conectado por pipes unidirecionais com direcionalidade explícita, até a entrega no Sink (consumidor)."
 flowchart LR
-    S["🔵 Fonte de dados"]
-    F1["⚙️ Filtro A"]
-    F2["⚙️ Filtro B"]
-    F3["⚙️ Filtro C"]
-    K["🔴 Sink"]
+    Pump["🔵 Pump (Fonte de Dados)<br/><i>Ingestão de texto bruto / logs</i>"]
+    F1["⚙️ Filtro 1: Normalização<br/><i>Padroniza minúsculas e remove pontuação</i>"]
+    F2["⚙️ Filtro 2: Tokenização<br/><i>Segmenta o texto em palavras/tokens</i>"]
+    F3["⚙️ Filtro 3: Filtragem<br/><i>Descarta stop words e ruídos</i>"]
+    F4["⚙️ Filtro 4: Agregação<br/><i>Calcula frequências dos termos</i>"]
+    Sink["🔴 Sink (Destino / Consumidor)<br/><i>Persistência ou exibição final</i>"]
 
-    S -->|"pipe: dados brutos"| F1
-    F1 -->|"pipe: dados transformados"| F2
-    F2 -->|"pipe: dados refinados"| F3
-    F3 -->|"pipe: resultado final"| K
+    Pump ==>|"pipe: texto bruto"| F1
+    F1 ==>|"pipe: texto normalizado"| F2
+    F2 ==>|"pipe: lista de tokens"| F3
+    F3 ==>|"pipe: tokens filtrados"| F4
+    F4 ==>|"pipe: frequências"| Sink
 
-    style S fill:#1e3a5f,stroke:#4a90d9,color:#fff
-    style K fill:#5f1e1e,stroke:#d94a4a,color:#fff
-    style F1 fill:#2d2d2d,stroke:#888,color:#fff
-    style F2 fill:#2d2d2d,stroke:#888,color:#fff
-    style F3 fill:#2d2d2d,stroke:#888,color:#fff
+    style Pump fill:#1e3a5f,stroke:#4a90d9,color:#fff,stroke-width:2px
+    style Sink fill:#5f1e1e,stroke:#d94a4a,color:#fff,stroke-width:2px
+    style F1 fill:#252d3a,stroke:#5a738e,color:#fff,stroke-width:2px
+    style F2 fill:#252d3a,stroke:#5a738e,color:#fff,stroke-width:2px
+    style F3 fill:#252d3a,stroke:#5a738e,color:#fff,stroke-width:2px
+    style F4 fill:#252d3a,stroke:#5a738e,color:#fff,stroke-width:2px
 ```
 
 A seguir, cada elemento é descrito em detalhe.
 
-### Fonte de dados (*data source*)
+### Fonte de dados (*data source* ou *pump*)
 
 A fonte de dados é o **ponto de origem** do pipeline — o componente que produz
 o fluxo inicial de dados que será processado pelos filtros subsequentes. A fonte
@@ -363,6 +366,19 @@ transformação, o pipeline precisa dispor de mecanismos bem definidos para desc
 registro em trilha de auditoria ou roteamento alternativo (como filas de mensagens mortas
 ou dead-letter channels), evitando que uma inconsistência pontual interrompa o processamento
 dos demais itens válidos em um fluxo contínuo de alta vazão.
+
+### O mecanismo do pipe: lote versus streaming
+
+No design de pipelines, a estratégia de tráfego de dados dita o perfil de consumo de recursos. Em implementações simples em lote (*batch*), cada filtro processa o conjunto integral de dados de uma vez e repassa a lista completa ao próximo componente. Para textos curtos, essa abordagem é direta; contudo, em sistemas industriais com grandes volumes (como processamento de logs de dezenas de gigabytes), carregar listas completas esgota a memória RAM.
+
+Em Python, a capacidade plena do Pipe and Filter para grandes volumes se atinge por meio de **geradores (`yield`) e iteradores**. Com o processamento em fluxo contínuo (*streaming*), cada filtro consome e produz itens sob demanda, um a um. Isso transforma a cadeia em uma esteira de montagem viva, onde arquivos massivos são processados mantendo a utilização de memória praticamente estável e mínima.
+
+### Serialização em memória versus arquitetura distribuída
+
+É fundamental também distinguir o contexto de execução ao analisar o custo de serialização:
+
+- **No mesmo processo (em memória):** como na implementação em Python que analisamos, as chamadas de função compartilham a memória do processo. Os dados trafegam por referência, de modo que não há sobrecarga de parsing de bytes ou serialização em JSON entre os filtros.
+- **Em sistemas distribuídos e microserviços:** quando cada filtro opera em nós ou processos independentes (conectados por filas como RabbitMQ, Kafka ou pipes do sistema operacional), o custo de serializar os dados para trânsito na rede e desserializá-los em cada estágio torna-se um custo real e mensurável de latência e consumo de CPU [@hohpe2003enterprise, cap. 3].
 
 {{< include _trade-offs.md >}}
 
