@@ -298,11 +298,11 @@ frequência de palavras. O pipeline é composto por quatro filtros:
 %%| label: fig-exemplo-pipeline
 %%| fig-cap: "Pipeline de processamento de texto usando Pipe and Filter."
 flowchart LR
-    IN["📄 Texto bruto"] -->|pipe| F1["Normalizar"]
+    IN[/"📄 Entrada: texto bruto"/] -->|pipe| F1["Normalizar"]
     F1 -->|pipe| F2["Tokenizar"]
     F2 -->|pipe| F3["Filtrar stop words"]
     F3 -->|pipe| F4["Contar frequências"]
-    F4 -->|pipe| OUT["📊 Frequências"]
+    F4 -->|pipe| OUT[/"📊 Saída: frequências"/]
 ```
 
 Cada filtro tem responsabilidade única e pode ser testado isoladamente.
@@ -329,94 +329,36 @@ eferente dobra.
 O notebook deste tópico está em
 [`notebook.ipynb`](notebook.ipynb) e pode ser aberto direto no
 [Google Colab](https://colab.research.google.com/).
-
-O notebook precisa rodar de ponta a ponta em ambiente limpo. Teste no Colab antes
-de abrir o PR — funcionar na sua máquina não é suficiente.
 :::
 
-## Trade-offs
+### Trade-offs
+Nenhum estilo arquitetural atende a todas as necessidades perfeitamente. O grande trunfo do Pipe and Filter é a reusabilidade e a facilidade de compor novos fluxos. Pensando nos comandos do Unix, é possível resolver problemas complexos apenas encadeando ferramentas simples com o operador | [@shaw1996software, cap. 2]. Essa característica permite que as equipes de desenvolvimento criem blocos independentes e os reaproveitem em diversas partes da aplicação [@meunier1995pipes].
 
-Nenhum estilo arquitetural é melhor que outro em abstrato: cada um favorece
-certos atributos de qualidade ao custo de outros [@richards2020fundamentals,
-cap. 11]. O Pipe and Filter não é exceção.
+Por outro lado, o forte isolamento entre os filtros torna o rastreamento de erros um desafio considerável. Se o fluxo for interrompido no meio do processo, tratar a exceção e descobrir em qual etapa exata a falha ocorreu exige um bom planejamento. Em sistemas robustos, isso frequentemente requer a implementação de rotas de escape, como filas de mensagens mortas (dead-letter queues), garantindo que um dado malformado não trave o pipeline inteiro.
 
-Adotar o padrão Pipe and Filter envolve equilibrar compromissos arquiteturais importantes no design do sistema:
+## O mecanismo do pipe: lote versus streaming
+A forma como os dados trafegam altera radicalmente o consumo de recursos do sistema. Em uma abordagem de processamento em lote (batch), carregar arquivos inteiros para enviá-los de uma vez pelo pipe pode esgotar rapidamente a memória RAM do servidor. Por isso, a capacidade real do Pipe and Filter em sistemas de grande escala é alcançada através do processamento em fluxo contínuo (streaming). Utilizando geradores em Python, por exemplo, a arquitetura funciona como uma esteira de montagem que processa um item por vez, mantendo a utilização de memória mínima e previsível.
 
-- **Flexibilidade vs. Desempenho**: Ganha-se alta flexibilidade para reconfigurar etapas e reutilizar filtros, mas perde-se desempenho devido ao overhead constante de serialização, conversão de dados e passagem de mensagens entre os tubos [@bass2021software, cap. 13].
-- **Desacoplamento vs. Rastreabilidade de Erros**: O forte isolamento entre os filtros simplifica os testes unitários, mas dificulta o rastreamento do fluxo de execução em tempo de execução, tornando a depuração e o tratamento de exceções globais mais complexos.
-- **Escalabilidade vs. Complexidade de Infraestrutura**: A capacidade de executar filtros de forma distribuída e paralela melhora a vazão de dados (*throughput*), mas exige uma infraestrutura mais complexa para gerenciar filas, buffers de memória e monitoramento do pipeline.
-
-A principal força desse estilo é a **reusabilidade e composição**: filtros com
-interface padronizada podem ser recombinados em pipelines diferentes para
-resolver problemas distintos, da mesma forma que comandos Unix podem ser
-encadeados livremente [@shaw1996software, cap. 2]. Meunier descreve essa
-propriedade como a essência do padrão: o valor não está nos filtros individuais,
-mas na capacidade de combiná-los em configurações novas sem modificação
-[@meunier1995pipes].
-
-No entanto, isso vem com custos. A transformação de dados entre filtros impõe
-overhead: cada pipe precisa serializar e desserializar os dados, e o formato
-comum pode não ser o mais eficiente para cada filtro individual
-[@bass2021software, cap. 13]. Além disso, o processamento sequencial limita o
-paralelismo natural do pipeline, a menos que filtros possam operar sobre
-diferentes porções do fluxo de dados simultaneamente. Outro desafio arquitetural
-frequente envolve o tratamento e a propagação de erros e exceções ao longo da cadeia:
-quando um filtro intermediário encontra uma entrada malformada ou falha durante sua
-transformação, o pipeline precisa dispor de mecanismos bem definidos para descarte,
-registro em trilha de auditoria ou roteamento alternativo (como filas de mensagens mortas
-ou dead-letter channels), evitando que uma inconsistência pontual interrompa o processamento
-dos demais itens válidos em um fluxo contínuo de alta vazão.
-
-### O mecanismo do pipe: lote versus streaming
-
-No design de pipelines, a estratégia de tráfego de dados dita o perfil de consumo de recursos. Em implementações simples em lote (*batch*), cada filtro processa o conjunto integral de dados de uma vez e repassa a lista completa ao próximo componente. Para textos curtos, essa abordagem é direta; contudo, em sistemas industriais com grandes volumes (como processamento de logs de dezenas de gigabytes), carregar listas completas esgota a memória RAM.
-
-Em Python, a capacidade plena do Pipe and Filter para grandes volumes se atinge por meio de **geradores (`yield`) e iteradores**. Com o processamento em fluxo contínuo (*streaming*), cada filtro consome e produz itens sob demanda, um a um. Isso transforma a cadeia em uma esteira de montagem viva, onde arquivos massivos são processados mantendo a utilização de memória praticamente estável e mínima.
-
-### Serialização em memória versus arquitetura distribuída
-
-É fundamental também distinguir o contexto de execução ao analisar o custo de serialização:
-
-- **No mesmo processo (em memória):** como na implementação em Python que analisamos, as chamadas de função compartilham a memória do processo. Os dados trafegam por referência, de modo que não há sobrecarga de parsing de bytes ou serialização em JSON entre os filtros.
-- **Em sistemas distribuídos e microserviços:** quando cada filtro opera em nós ou processos independentes (conectados por filas como RabbitMQ, Kafka ou pipes do sistema operacional), o custo de serializar os dados para trânsito na rede e desserializá-los em cada estágio torna-se um custo real e mensurável de latência e consumo de CPU [@hohpe2003enterprise, cap. 3].
+## Serialização em memória versus arquitetura distribuída
+A cada passagem de dados por um conector, o sistema consome processamento com a conversão e serialização da informação [@bass2021software, cap. 13]. Em um ambiente executado no mesmo processo (em memória), esse impacto é quase imperceptível, já que os dados viajam por referência. No entanto, ao escalar para microsserviços ou sistemas distribuídos — onde cada filtro opera em um servidor isolado —, a necessidade de serializar os dados (como transformá-los em JSON) para enviá-los pela rede (usando Kafka ou RabbitMQ) introduz uma latência real que deve ser contabilizada no projeto.
 
 {{< include _trade-offs.md >}}
 
 ## Quando usar e quando não usar
+O estilo Pipe and Filter demonstra seu maior valor em cenários onde a informação precisa passar por uma sequência bem definida de transformações independentes. Na prática da engenharia de software, exemplos concretos dessa adoção incluem a construção de compiladores (que dividem o trabalho em análise léxica, sintática e semântica), pipelines de ETL (para extração, transformação e carga de grandes volumes de dados) e sistemas de processamento massivo de logs, áudio ou vídeo.
 
-**Considere usar quando:**
+Apesar de sua versatilidade, evite adotar este estilo em sistemas altamente interativos. Interfaces de usuário que dependem de respostas imediatas costumam sofrer com a latência gerada pela passagem de dados entre múltiplas etapas assíncronas. Da mesma forma, se o seu processamento exige a consulta constante a um banco de dados global compartilhado, ou envolve transações que demandam rollbacks frequentes para manter a consistência, a separação rígida imposta pelos pipes criará mais obstáculos do que benefícios.
 
-- **Processamento em Etapas Independentes**: Quando a tarefa principal pode ser dividida de forma natural em uma sequência de etapas independentes de processamento ou transformação.
-- **Requisitos de Dados Variáveis**: Quando o sistema precisa de flexibilidade para alterar a ordem das etapas, adicionar novas validações ou remover filtros dependendo do tipo de dado recebido.
-- **Reutilização de Componentes**: Quando etapas de processamento específicas (como autenticação, higienização ou conversão de formato) precisam ser reutilizadas em diferentes fluxos da aplicação.
-- **Processamento Paralelo ou Concorrente**: Quando partes do pipeline se beneficiam de execução simultânea em diferentes threads ou servidores para otimizar o tempo de resposta global.
-
-**Evite quando:**
-
-- **Operações Altamente Interativas**: Quando o sistema exige interação contínua e em tempo real com o usuário, pois a natureza assíncrona ou em fluxo contínuo do pipeline pode introduzir latência indesejada.
-- **Dependência de Estado Compartilhado**: Quando as etapas dependem fortemente do mesmo estado ou precisam acessar dados globais complexos para tomar decisões.
-- **Fluxos Pequenos e Simples**: Quando o processamento é direto e possui poucas operações, tornando a criação de tubos e filtros um exagero de engenharia (*overengineering*).
-- **Transações com Necessidade de Rollback Frequente**: Quando o processo exige forte consistência transacional (ACID), pois desfazer alterações em etapas que já enviaram dados pelos tubos é extremamente complexo.
-
-**Sinais de que a escolha foi errada:**
-
-- Filtros que precisam consultar o estado interno de outros filtros para operar
-- Pipes que transportam objetos complexos com dezenas de campos, dos quais cada
-  filtro usa apenas dois ou três
-- Um filtro "orquestrador" que coordena a execução dos demais, transformando o
-  pipeline em uma arquitetura centralizada disfarçada
+Sinais de que a escolha foi inadequada:
+A essência do Pipe and Filter se perde quando a independência dos componentes é quebrada. O design está comprometido se um filtro precisa verificar o estado interno de outro para tomar uma decisão. Outro indício de falha é o tráfego de objetos gigantescos pelos pipes, dos quais cada etapa utiliza apenas uma pequena fração dos campos. Por fim, se houver a necessidade de criar um "filtro orquestrador" para coordenar a execução das outras etapas, a arquitetura deixou de ser um pipeline autônomo e se tornou um modelo centralizado desnecessariamente complexo.
 
 ::: {.callout-note}
 ## Slides deste tópico
-A apresentação está em [`slides.qmd`](slides.qmd) — 16 slides para uma fala de
-20 minutos, com os mesmos exemplos e trade-offs deste texto.
+O material de apresentação utilizado neste tópico está disponível em
+[`slides.qmd`](slides.qmd).
 :::
 
 ## Referências
-
-As referências abaixo são geradas automaticamente a partir de `referencias.bib`.
-Não escreva esta lista à mão.
-
 ::: {#refs}
 :::
 

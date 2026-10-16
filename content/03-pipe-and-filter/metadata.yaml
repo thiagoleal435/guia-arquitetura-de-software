@@ -41,7 +41,7 @@ autores:
     github: "sig-afk"
     orcid: ""
 
-status: "rascunho"        # rascunho | em-revisao | publicado | modelo
+status: "publicado"        # rascunho | em-revisao | publicado | modelo
 data_criacao: "2026-09-22"
 ultima_revisao: "2026-09-22"
 revisado_por:

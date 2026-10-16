@@ -1,4 +1,4 @@
-### Trade-offs da Arquitetura Pipe and Filter
+### Quadro Resumo dos Trade-offs
 
 A avaliação a seguir sintetiza os principais trade-offs e impactos arquiteturais decorrentes da adoção do estilo Pipe and Filter, confrontando os ganhos em reusabilidade, modificabilidade e testabilidade com os custos impostos ao desempenho, à interatividade e ao tratamento de erros.
 
