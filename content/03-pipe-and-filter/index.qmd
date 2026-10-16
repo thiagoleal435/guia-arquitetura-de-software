@@ -331,15 +331,15 @@ O notebook deste tópico está em
 [Google Colab](https://colab.research.google.com/).
 :::
 
-### Trade-offs
+## Trade-offs
 Nenhum estilo arquitetural atende a todas as necessidades perfeitamente. O grande trunfo do Pipe and Filter é a reusabilidade e a facilidade de compor novos fluxos. Pensando nos comandos do Unix, é possível resolver problemas complexos apenas encadeando ferramentas simples com o operador | [@shaw1996software, cap. 2]. Essa característica permite que as equipes de desenvolvimento criem blocos independentes e os reaproveitem em diversas partes da aplicação [@meunier1995pipes].
 
 Por outro lado, o forte isolamento entre os filtros torna o rastreamento de erros um desafio considerável. Se o fluxo for interrompido no meio do processo, tratar a exceção e descobrir em qual etapa exata a falha ocorreu exige um bom planejamento. Em sistemas robustos, isso frequentemente requer a implementação de rotas de escape, como filas de mensagens mortas (dead-letter queues), garantindo que um dado malformado não trave o pipeline inteiro.
 
-## O mecanismo do pipe: lote versus streaming
+### O mecanismo do pipe: lote versus streaming
 A forma como os dados trafegam altera radicalmente o consumo de recursos do sistema. Em uma abordagem de processamento em lote (batch), carregar arquivos inteiros para enviá-los de uma vez pelo pipe pode esgotar rapidamente a memória RAM do servidor. Por isso, a capacidade real do Pipe and Filter em sistemas de grande escala é alcançada através do processamento em fluxo contínuo (streaming). Utilizando geradores em Python, por exemplo, a arquitetura funciona como uma esteira de montagem que processa um item por vez, mantendo a utilização de memória mínima e previsível.
 
-## Serialização em memória versus arquitetura distribuída
+### Serialização em memória versus arquitetura distribuída
 A cada passagem de dados por um conector, o sistema consome processamento com a conversão e serialização da informação [@bass2021software, cap. 13]. Em um ambiente executado no mesmo processo (em memória), esse impacto é quase imperceptível, já que os dados viajam por referência. No entanto, ao escalar para microsserviços ou sistemas distribuídos — onde cada filtro opera em um servidor isolado —, a necessidade de serializar os dados (como transformá-los em JSON) para enviá-los pela rede (usando Kafka ou RabbitMQ) introduz uma latência real que deve ser contabilizada no projeto.
 
 {{< include _trade-offs.md >}}
@@ -363,6 +363,7 @@ O material de apresentação utilizado neste tópico está disponível em
 :::
 
 ::: {.como-citar}
+
 **Como citar este tópico**
 
 Thiago Leal; Emerson Silva; José Victor; Randson Bredley; Thiago Patriota;
