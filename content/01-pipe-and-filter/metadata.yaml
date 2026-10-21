@@ -16,13 +16,13 @@ resumo: >-
 # devem ser creditados. Todos entram no crédito, na citação e na lista de
 # contribuidores do site.
 autores:
-  - nome: "Thiago Leal"
-    grupo: "Grupo 3"
-    github: "thiagoleal435"
-    orcid: ""
   - nome: "Emerson Silva"
     grupo: "Grupo 3"
     github: "emersontecn"
+    orcid: ""
+  - nome: "Gustavo Henrique"
+    grupo: "Grupo 3"
+    github: "sig-afk"
     orcid: ""
   - nome: "José Victor"
     grupo: "Grupo 3"
@@ -32,13 +32,13 @@ autores:
     grupo: "Grupo 3"
     github: "randsonbredley"
     orcid: ""
+  - nome: "Thiago Leal"
+    grupo: "Grupo 3"
+    github: "thiagoleal435"
+    orcid: ""
   - nome: "Thiago Patriota"
     grupo: "Grupo 3"
     github: "ThiagoPatriotaDev"
-    orcid: ""
-  - nome: "Gustavo Henrique"
-    grupo: "Grupo 3"
-    github: "sig-afk"
     orcid: ""
 
 status: "publicado"        # rascunho | em-revisao | publicado | modelo
@@ -89,7 +89,7 @@ formatos:
   audio_notebooklm:
     entregue: true
     arquivo: ""
-    url: "https://notebook.google.com/notebook/5a841bab-11a0-4150-a39a-3b9a14a6940f/artifact/a221b462-5454-4f16-8b70-225ebafce212?utm_source=nlm_web_share&utm_medium=google_oo&utm_campaign=art_share_1&utm_content=&utm_smc=nlm_web_share_google_oo_art_share_1_"
+    url: "https://drive.google.com/drive/folders/15m0eOoOJiadYfk65PYidzkMVHeE4cfv9"
     duracao_min: 10
     transcricao: "assets/audio-transcricao.md"
   gem_gemini:

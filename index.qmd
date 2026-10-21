@@ -25,8 +25,8 @@ concluídos e revisados. Para escrever um, comece pelo
 O estilo arquitetural Pipe and Filter organiza o processamento de dados como
 uma cadeia de transformações independentes conectadas por pipes.
 
-**Autores:** Thiago Leal, Emerson Silva, José Victor, Randson Bredley, Thiago
-Patriota e Gustavo Henrique.
+**Autores:** Emerson Silva, Gustavo Henrique, José Victor, Randson Bredley, Thiago
+Leal e Thiago Patriota.
 
 **Formatos:** texto · notebook · áudio · gem · slides
 
