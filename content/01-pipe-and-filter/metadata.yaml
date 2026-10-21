@@ -1,7 +1,7 @@
 # Metadados do tópico — preencha tudo. O CI valida os campos obrigatórios.
 # Este arquivo também alimenta a indexação por ferramentas de IA.
 
-numero: "03"
+numero: "01"
 slug: "pipe-and-filter"
 titulo: "Pipe and Filter"
 subtitulo: "Processamento de dados como fluxo sequencial de transformações independentes"

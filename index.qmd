@@ -20,7 +20,7 @@ concluídos e revisados. Para escrever um, comece pelo
 
 ## Tópicos
 
-### [03 — Pipe and Filter](content/03-pipe-and-filter/index.qmd)
+### [01 — Pipe and Filter](content/01-pipe-and-filter/index.qmd)
 
 O estilo arquitetural Pipe and Filter organiza o processamento de dados como
 uma cadeia de transformações independentes conectadas por pipes.

@@ -369,5 +369,5 @@ O material de apresentação utilizado neste tópico está disponível em
 Thiago Leal; Emerson Silva; José Victor; Randson Bredley; Thiago Patriota;
 Gustavo Henrique. "Pipe and Filter".
 *Guia Aberto de Arquitetura de Software*, 2026. Disponível em:
-<https://ifpe-belojardim-es.github.io/guia-arquitetura-de-software/content/03-pipe-and-filter/>. Licenciado sob CC BY-NC 4.0.
+<https://ifpe-belojardim-es.github.io/guia-arquitetura-de-software/content/01-pipe-and-filter/>. Licenciado sob CC BY-NC 4.0.
 :::

@@ -26,8 +26,8 @@ website:
             text: Sobre o projeto
       - text: Tópicos
         menu:
-          - href: content/03-pipe-and-filter/index.qmd
-            text: "03 — Pipe and Filter"
+          - href: content/01-pipe-and-filter/index.qmd
+            text: "01 — Pipe and Filter"
 
     right:
       - icon: github
